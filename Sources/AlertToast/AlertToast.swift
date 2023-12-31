@@ -68,11 +68,13 @@ public struct AlertToast: View {
     /// Customize Alert Appearance
     public enum AlertStyle: Equatable {
 
-        case style(backgroundColor: Color? = nil,
-                   titleColor: Color? = nil,
-                   subTitleColor: Color? = nil,
-                   titleFont: Font? = nil,
-                   subTitleFont: Font? = nil)
+        case style(
+            backgroundColor: Color? = nil,
+            titleColor: Color? = nil,
+            subTitleColor: Color? = nil,
+            titleFont: Font? = nil,
+            subTitleFont: Font? = nil
+        )
 
         /// Get background color
         var backgroundColor: Color? {

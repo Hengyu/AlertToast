@@ -107,11 +107,12 @@ public struct AlertToastModifier: ViewModifier {
         switch alert().displayMode {
         case .banner:
             content
-                .overlay(ZStack {
-                    main()
-                        .offset(y: offsetY)
-                }
-                            .animation(Animation.spring(), value: isPresenting)
+                .overlay(
+                    ZStack {
+                        main()
+                            .offset(y: offsetY)
+                    }
+                        .animation(Animation.spring(), value: isPresenting)
                 )
                 .valueChanged(value: isPresenting) { presented in
                     if presented {
