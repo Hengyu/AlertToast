@@ -72,6 +72,17 @@ public struct AlertToastModifier: ViewModifier {
             let value = alert()
 
             value
+                .overlay(
+                    GeometryReader { geo -> AnyView in
+                        let rect = geo.frame(in: .global)
+                        if rect.integral != alertRect.integral {
+                            DispatchQueue.main.async {
+                                self.alertRect = rect
+                            }
+                        }
+                        return AnyView(EmptyView())
+                    }
+                )
                 .onTapGesture {
                     onTap?()
                     if tapToDismiss {
