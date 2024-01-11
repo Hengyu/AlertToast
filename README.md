@@ -1,8 +1,9 @@
 # AlertToast
 
-![](https://img.shields.io/badge/iOS-13.0%2B-green)
-![](https://img.shields.io/badge/macCatalyst-13.0%2B-green)
+![](https://img.shields.io/badge/iOS-14.0%2B-green)
+![](https://img.shields.io/badge/macCatalyst-14.0%2B-green)
 ![](https://img.shields.io/badge/macOS-11.0%2B-green)
+![](https://img.shields.io/badge/tvOS-14.0%2B-green)
 ![](https://img.shields.io/badge/visionOS-1.0%2B-green)
 ![](https://img.shields.io/badge/Swift-5-orange?logo=Swift&logoColor=white)
 ![](https://img.shields.io/github/last-commit/hengyu/AlertToast)
@@ -40,7 +41,7 @@ Alert Toast is an open-source library in Github to use with SwiftUI. It allows y
 ## Requirements
 
 - SwiftUI
-- iOS 13.0+, macCatalyst 13.0+, macOS 11.0+, visionOS 1.0+
+- iOS 14.0+, macCatalyst 14.0+, macOS 11.0+, tvOS 14.0+, visionOS 1.0+
 
 ## Installation
 

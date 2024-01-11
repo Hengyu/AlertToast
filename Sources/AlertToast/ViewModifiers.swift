@@ -73,17 +73,11 @@ public struct AlertToastModifier: ViewModifier {
 
             value
                 .overlay(
-                    GeometryReader { geo -> AnyView in
-                        let rect = geo.frame(in: .global)
-                        if rect.integral != alertRect.integral {
-                            DispatchQueue.main.async {
-                                self.alertRect = rect
-                            }
-                        }
-                        return AnyView(EmptyView())
+                    GeometryReader {
+                        saveAlertRect($0)
                     }
                 )
-                .onTapGesture {
+                .adaptiveOnTapGesture {
                     onTap?()
                     if tapToDismiss {
                         withAnimation(.spring()) {
@@ -175,6 +169,16 @@ public struct AlertToastModifier: ViewModifier {
                     }
                 }
         }
+    }
+
+    private func saveAlertRect(_ geo: GeometryProxy) -> some View {
+        let rect = geo.frame(in: .global)
+        if rect.integral != alertRect.integral {
+            DispatchQueue.main.async {
+                self.alertRect = rect
+            }
+        }
+        return AnyView(EmptyView())
     }
 
     private func onAppearAction() {
@@ -314,7 +318,7 @@ public extension View {
             self.onChange(of: value) { _, newValue in
                 onChange(newValue)
             }
-        } else if #available(iOS 14.0, *) {
+        } else if #available(iOS 14.0, macOS 11.0, tvOS 14.0, *) {
             self.onChange(of: value, perform: onChange)
         } else {
             self.onReceive(Just(value)) { (value) in
