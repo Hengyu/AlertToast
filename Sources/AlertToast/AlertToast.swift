@@ -207,6 +207,9 @@ public struct AlertToast: View {
             .cornerRadius(10)
             .padding([.horizontal, .bottom])
         }
+        #if os(visionOS)
+        .frame(depth: 100)
+        #endif
     }
 
     /// HUD View
@@ -264,6 +267,9 @@ public struct AlertToast: View {
             .compositingGroup()
         }
         .padding(.top)
+        #if os(visionOS)
+        .frame(depth: 100)
+        #endif
     }
 
     /// Alert View
@@ -323,6 +329,9 @@ public struct AlertToast: View {
         .withFrame(type != .regular && type != .loading)
         .alertBackground(style?.backgroundColor ?? nil)
         .cornerRadius(10)
+        #if os(visionOS)
+        .frame(depth: 100)
+        #endif
     }
 
     /// Body init determine by `displayMode`
