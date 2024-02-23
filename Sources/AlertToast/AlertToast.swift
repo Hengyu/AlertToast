@@ -121,20 +121,20 @@ public struct AlertToast: View {
     /// - `alert`
     /// - `hud`
     /// - `banner`
-    public var displayMode: DisplayMode = .alert
+    internal let displayMode: DisplayMode
 
     /// What the alert would show
     /// `complete`, `error`, `systemImage`, `image`, `loading`, `regular`
-    public var type: AlertType
+    internal let type: AlertType
 
-    /// The title of the alert (`Optional(String)`)
-    public var title: String?
+    /// The title of the alert.
+    private let title: LocalizedStringKey?
 
-    /// The subtitle of the alert (`Optional(String)`)
-    public var subTitle: String?
+    /// The subtitle of the alert.
+    private let subtitle: LocalizedStringKey?
 
     /// Customize your alert appearance
-    public var style: AlertStyle?
+    private let style: AlertStyle?
 
     /// Full init
     public init(
@@ -146,8 +146,22 @@ public struct AlertToast: View {
     ) {
         self.displayMode = displayMode
         self.type = type
+        self.title = title.flatMap { LocalizedStringKey($0) }
+        self.subtitle = subTitle.flatMap { LocalizedStringKey($0) }
+        self.style = style
+    }
+
+    public init(
+        displayMode: DisplayMode = .alert,
+        type: AlertType,
+        title: LocalizedStringKey? = nil,
+        subtitle: LocalizedStringKey? = nil,
+        style: AlertStyle? = nil
+    ) {
+        self.displayMode = displayMode
+        self.type = type
         self.title = title
-        self.subTitle = subTitle
+        self.subtitle = subtitle
         self.style = style
     }
 
@@ -159,7 +173,9 @@ public struct AlertToast: View {
     ) {
         self.displayMode = displayMode
         self.type = type
-        self.title = title
+        self.title = title.flatMap { LocalizedStringKey($0) }
+        self.subtitle = nil
+        self.style = nil
     }
 
     /// Banner from the bottom of the view
@@ -190,13 +206,15 @@ public struct AlertToast: View {
                         EmptyView()
                     }
 
-                    Text(LocalizedStringKey(title ?? ""))
-                        .font(style?.titleFont ?? Font.headline.bold())
+                    if let title {
+                        Text(title)
+                            .font(style?.titleFont ?? .headline.bold())
+                    }
                 }
 
-                if subTitle != nil {
-                    Text(LocalizedStringKey(subTitle!))
-                        .font(style?.subTitleFont ?? Font.subheadline)
+                if let subtitle {
+                    Text(subtitle)
+                        .font(style?.subTitleFont ?? .subheadline)
                 }
             }
             .multilineTextAlignment(.leading)
@@ -239,16 +257,16 @@ public struct AlertToast: View {
                     EmptyView()
                 }
 
-                if title != nil || subTitle != nil {
+                if title != nil || subtitle != nil {
                     VStack(alignment: type == .regular ? .center : .leading, spacing: 2) {
-                        if title != nil {
-                            Text(LocalizedStringKey(title ?? ""))
+                        if let title {
+                            Text(title)
                                 .font(style?.titleFont ?? Font.body.bold())
                                 .multilineTextAlignment(.center)
                                 .textColor(style?.titleColor ?? nil)
                         }
-                        if subTitle != nil {
-                            Text(LocalizedStringKey(subTitle ?? ""))
+                        if let subtitle {
+                            Text(subtitle)
                                 .font(style?.subTitleFont ?? Font.footnote)
                                 .opacity(0.7)
                                 .multilineTextAlignment(.center)
@@ -310,14 +328,14 @@ public struct AlertToast: View {
             }
 
             VStack(spacing: type == .regular ? 8 : 2) {
-                if title != nil {
-                    Text(LocalizedStringKey(title ?? ""))
+                if let title {
+                    Text(title)
                         .font(style?.titleFont ?? Font.body.bold())
                         .multilineTextAlignment(.center)
                         .textColor(style?.titleColor ?? nil)
                 }
-                if subTitle != nil {
-                    Text(LocalizedStringKey(subTitle ?? ""))
+                if let subtitle {
+                    Text(subtitle)
                         .font(style?.subTitleFont ?? Font.footnote)
                         .opacity(0.7)
                         .multilineTextAlignment(.center)
