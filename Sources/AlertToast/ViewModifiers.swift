@@ -49,7 +49,7 @@ public struct AlertToastModifier: ViewModifier {
     @State private var alertRect: CGRect = .zero
 
     private var size: CGSize {
-        #if os(iOS)
+        #if os(iOS) || os(tvOS)
         return UIScreen.main.bounds.size
         #elseif os(macOS)
         if let frame = NSScreen.main?.frame {
