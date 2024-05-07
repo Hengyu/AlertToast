@@ -41,7 +41,7 @@ Alert Toast is an open-source library in Github to use with SwiftUI. It allows y
 ## Requirements
 
 - SwiftUI
-- iOS 14.0+, macCatalyst 14.0+, macOS 11.0+, tvOS 14.0+, visionOS 1.0+
+- iOS 15.0+, macCatalyst 15.0+, macOS 12.0+, tvOS 15.0+, visionOS 1.0+
 
 ## Installation
 
@@ -123,16 +123,16 @@ AlertToast(
     type: AlertType,
     title: Optional(String),
     subtitle: Optional(String),
-    style: Optional(AlertStyle)
+    style: AlertStyle
 )
            
 //This is the available customizations parameters:
 AlertStyle(
-    backgroundColor: Color?,
-    titleColor: Color?,
-    subtitleColor: Color?,
-    titleFont: Font?,
-    subtitleFont: Font?
+    titleStyle: ShapeStyle,
+    titleFont: Font,
+    subtitleStyle: ShapeStyle,
+    subtitleFont: Font,
+    backgroundColor: Color
 )
 ```
 
