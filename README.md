@@ -122,7 +122,7 @@ AlertToast(
     displayMode: DisplayMode,
     type: AlertType,
     title: Optional(String),
-    subTitle: Optional(String),
+    subtitle: Optional(String),
     style: Optional(AlertStyle)
 )
            
@@ -130,9 +130,9 @@ AlertToast(
 AlertStyle(
     backgroundColor: Color?,
     titleColor: Color?,
-    subTitleColor: Color?,
+    subtitleColor: Color?,
     titleFont: Font?,
-    subTitleFont: Font?
+    subtitleFont: Font?
 )
 ```
 
@@ -152,28 +152,28 @@ AlertStyle(
 
 #### Simple Text Alert:
 ```swift
-AlertToast(type: .regular, title: Optional(String), subTitle: Optional(String))
+AlertToast(type: .regular, title: Optional(String), subtitle: Optional(String))
 ```
 
 #### Complete/Error Alert:
 ```swift
-AlertToast(type: .complete(Color)/.error(Color), title: Optional(String), subTitle: Optional(String))
+AlertToast(type: .complete(Color)/.error(Color), title: Optional(String), subtitle: Optional(String))
 ```
 
 #### System Image Alert:
 ```swift
-AlertToast(type: .systemImage(String, Color), title: Optional(String), subTitle: Optional(String))
+AlertToast(type: .systemImage(String, Color), title: Optional(String), subtitle: Optional(String))
 ```
 
 #### Image Alert:
 ```swift
-AlertToast(type: .image(String), title: Optional(String), subTitle: Optional(String))
+AlertToast(type: .image(String), title: Optional(String), subtitle: Optional(String))
 ```
 
 #### Loading Alert:
 ```swift
 //When using loading, duration won't auto dismiss and tapToDismiss is set to false
-AlertToast(type: .loading, title: Optional(String), subTitle: Optional(String))
+AlertToast(type: .loading, title: Optional(String), subtitle: Optional(String))
 ```
 
 You can add many `.toast` on a single view.

@@ -63,57 +63,45 @@ public struct AlertToast: View {
 
         /// Only text alert
         case regular
+
+        var titleSubtitlePadding: CGFloat {
+            switch self {
+            case .complete, .error, .systemImage, .image, .loading:
+                #if os(tvOS)
+                4
+                #else
+                2
+                #endif
+            case .regular:
+                #if os(tvOS)
+                12
+                #else
+                8
+                #endif
+            }
+        }
     }
 
     /// Customize Alert Appearance
-    public enum AlertStyle: Equatable {
+    public struct AlertStyle: Sendable {
+        public let titleStyle: AnyShapeStyle
+        public let titleFont: Font
+        public let subtitleStyle: AnyShapeStyle
+        public let subtitleFont: Font
+        public let backgroundColor: Color?
 
-        case style(
-            backgroundColor: Color? = nil,
-            titleColor: Color? = nil,
-            subTitleColor: Color? = nil,
-            titleFont: Font? = nil,
-            subTitleFont: Font? = nil
-        )
-
-        /// Get background color
-        var backgroundColor: Color? {
-            switch self {
-            case .style(backgroundColor: let color, _, _, _, _):
-                return color
-            }
-        }
-
-        /// Get title color
-        var titleColor: Color? {
-            switch self {
-            case .style(_, let color, _, _, _):
-                return color
-            }
-        }
-
-        /// Get subTitle color
-        var subtitleColor: Color? {
-            switch self {
-            case .style(_, _, let color, _, _):
-                return color
-            }
-        }
-
-        /// Get title font
-        var titleFont: Font? {
-            switch self {
-            case .style(_, _, _, titleFont: let font, _):
-                return font
-            }
-        }
-
-        /// Get subTitle font
-        var subTitleFont: Font? {
-            switch self {
-            case .style(_, _, _, _, subTitleFont: let font):
-                return font
-            }
+        public init(
+            titleStyle: any ShapeStyle = .primary,
+            titleFont: Font = .headline,
+            subtitleStyle: any ShapeStyle = .secondary,
+            subtitleFont: Font = .subheadline,
+            backgroundColor: Color? = nil
+        ) {
+            self.titleStyle = .init(titleStyle)
+            self.titleFont = titleFont
+            self.subtitleStyle = .init(subtitleStyle)
+            self.subtitleFont = subtitleFont
+            self.backgroundColor = backgroundColor
         }
     }
 
@@ -134,20 +122,20 @@ public struct AlertToast: View {
     private let subtitle: LocalizedStringKey?
 
     /// Customize your alert appearance
-    private let style: AlertStyle?
+    private let style: AlertStyle
 
     /// Full init
     public init(
         displayMode: DisplayMode = .alert,
         type: AlertType,
         title: String? = nil,
-        subTitle: String? = nil,
-        style: AlertStyle? = nil
+        subtitle: String? = nil,
+        style: AlertStyle = .init()
     ) {
         self.displayMode = displayMode
         self.type = type
         self.title = title.flatMap { LocalizedStringKey($0) }
-        self.subtitle = subTitle.flatMap { LocalizedStringKey($0) }
+        self.subtitle = subtitle.flatMap { LocalizedStringKey($0) }
         self.style = style
     }
 
@@ -156,7 +144,7 @@ public struct AlertToast: View {
         type: AlertType,
         title: LocalizedStringKey? = nil,
         subtitle: LocalizedStringKey? = nil,
-        style: AlertStyle? = nil
+        style: AlertStyle = .init()
     ) {
         self.displayMode = displayMode
         self.type = type
@@ -175,7 +163,7 @@ public struct AlertToast: View {
         self.type = type
         self.title = title.flatMap { LocalizedStringKey($0) }
         self.subtitle = nil
-        self.style = nil
+        self.style = .init()
     }
 
     /// Banner from the bottom of the view
@@ -189,17 +177,17 @@ public struct AlertToast: View {
                     switch type {
                     case .complete(let color):
                         Image(systemName: "checkmark")
-                            .foregroundColor(color)
+                            .foregroundStyle(color)
                     case .error(let color):
                         Image(systemName: "xmark")
-                            .foregroundColor(color)
+                            .foregroundStyle(color)
                     case .systemImage(let name, let color):
                         Image(systemName: name)
-                            .foregroundColor(color)
+                            .foregroundStyle(color)
                     case .image(let name, let color):
                         Image(name)
                             .renderingMode(.template)
-                            .foregroundColor(color)
+                            .foregroundStyle(color)
                     case .loading:
                         ActivityIndicator()
                     case .regular:
@@ -208,21 +196,28 @@ public struct AlertToast: View {
 
                     if let title {
                         Text(title)
-                            .font(style?.titleFont ?? .headline.bold())
+                            .font(style.titleFont)
+                            .foregroundStyle(style.titleStyle)
                     }
                 }
 
                 if let subtitle {
                     Text(subtitle)
-                        .font(style?.subTitleFont ?? .subheadline)
+                        .font(style.subtitleFont)
+                        .foregroundStyle(style.subtitleStyle)
                 }
             }
             .multilineTextAlignment(.leading)
-            .textColor(style?.titleColor ?? nil)
             .padding()
+            #if os(tvOS)
+            .frame(maxWidth: 480, alignment: .leading)
+            .alertBackground(style.backgroundColor)
+            .clipShape(RoundedRectangle(cornerRadius: 16))
+            #else
             .frame(maxWidth: 400, alignment: .leading)
-            .alertBackground(style?.backgroundColor ?? nil)
-            .cornerRadius(10)
+            .alertBackground(style.backgroundColor)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            #endif
             .padding([.horizontal, .bottom])
         }
         #if os(visionOS)
@@ -238,19 +233,19 @@ public struct AlertToast: View {
                 case .complete(let color):
                     Image(systemName: "checkmark")
                         .hudModifier()
-                        .foregroundColor(color)
+                        .foregroundStyle(color)
                 case .error(let color):
                     Image(systemName: "xmark")
                         .hudModifier()
-                        .foregroundColor(color)
+                        .foregroundStyle(color)
                 case .systemImage(let name, let color):
                     Image(systemName: name)
                         .hudModifier()
-                        .foregroundColor(color)
+                        .foregroundStyle(color)
                 case .image(let name, let color):
                     Image(name)
                         .hudModifier()
-                        .foregroundColor(color)
+                        .foregroundStyle(color)
                 case .loading:
                     ActivityIndicator()
                 case .regular:
@@ -258,19 +253,19 @@ public struct AlertToast: View {
                 }
 
                 if title != nil || subtitle != nil {
-                    VStack(alignment: type == .regular ? .center : .leading, spacing: 2) {
+                    VStack(alignment: type == .regular ? .center : .leading, spacing: type.titleSubtitlePadding) {
                         if let title {
                             Text(title)
-                                .font(style?.titleFont ?? Font.body.bold())
+                                .font(style.titleFont)
+                                .foregroundStyle(style.titleStyle)
                                 .multilineTextAlignment(.center)
-                                .textColor(style?.titleColor ?? nil)
                         }
                         if let subtitle {
                             Text(subtitle)
-                                .font(style?.subTitleFont ?? Font.footnote)
+                                .font(style.subtitleFont)
+                                .foregroundStyle(style.subtitleStyle)
                                 .opacity(0.7)
                                 .multilineTextAlignment(.center)
-                                .textColor(style?.subtitleColor ?? nil)
                         }
                     }
                 }
@@ -278,7 +273,7 @@ public struct AlertToast: View {
             .padding(.horizontal, 24)
             .padding(.vertical, 8)
             .frame(minHeight: 50)
-            .alertBackground(style?.backgroundColor ?? nil)
+            .alertBackground(style.backgroundColor)
             .clipShape(Capsule())
             .overlay(Capsule().stroke(Color.gray.opacity(0.2), lineWidth: 1))
             .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 6)
@@ -309,7 +304,7 @@ public struct AlertToast: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .scaledToFit()
-                    .foregroundColor(color)
+                    .foregroundStyle(color)
                     .padding(.bottom)
                 Spacer()
             case .image(let name, let color):
@@ -318,7 +313,7 @@ public struct AlertToast: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .scaledToFit()
-                    .foregroundColor(color)
+                    .foregroundStyle(color)
                     .padding(.bottom)
                 Spacer()
             case .loading:
@@ -327,26 +322,30 @@ public struct AlertToast: View {
                 EmptyView()
             }
 
-            VStack(spacing: type == .regular ? 8 : 2) {
+            VStack(spacing: type.titleSubtitlePadding) {
                 if let title {
                     Text(title)
-                        .font(style?.titleFont ?? Font.body.bold())
+                        .font(style.titleFont)
+                        .foregroundStyle(style.titleStyle)
                         .multilineTextAlignment(.center)
-                        .textColor(style?.titleColor ?? nil)
                 }
                 if let subtitle {
                     Text(subtitle)
-                        .font(style?.subTitleFont ?? Font.footnote)
-                        .opacity(0.7)
+                        .font(style.subtitleFont)
+                        .foregroundStyle(style.subtitleStyle)
+                        .opacity(0.85)
                         .multilineTextAlignment(.center)
-                        .textColor(style?.subtitleColor ?? nil)
                 }
             }
         }
         .padding()
         .withFrame(type != .regular && type != .loading)
-        .alertBackground(style?.backgroundColor ?? nil)
-        .cornerRadius(10)
+        .alertBackground(style.backgroundColor)
+        #if os(tvOS)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        #else
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        #endif
         #if os(visionOS)
         .frame(depth: 100)
         #endif

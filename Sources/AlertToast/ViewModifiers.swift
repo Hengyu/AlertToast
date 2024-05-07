@@ -211,8 +211,13 @@ private struct WithFrameModifier: ViewModifier {
 
     var withFrame: Bool
 
+    #if os(tvOS)
+    var maxWidth: CGFloat = 360
+    var maxHeight: CGFloat = 360
+    #else
     var maxWidth: CGFloat = 175
     var maxHeight: CGFloat = 175
+    #endif
 
     @ViewBuilder
     func body(content: Content) -> some View {
@@ -242,22 +247,6 @@ private struct BackgroundModifier: ViewModifier {
                 content
                     .background(BlurView())
             }
-        }
-    }
-}
-
-/// Fileprivate View Modifier to change the text colors.
-private struct TextForegroundModifier: ViewModifier {
-
-    var color: Color?
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if color != nil {
-            content
-                .foregroundColor(color)
-        } else {
-            content
         }
     }
 }
@@ -304,13 +293,6 @@ public extension View {
     /// - Returns: some View
     func alertBackground(_ color: Color? = nil) -> some View {
         modifier(BackgroundModifier(color: color))
-    }
-
-    /// Choose the alert background
-    /// - Parameter color: Some Color, if `nil` return `.black`/`.white` depends on system theme
-    /// - Returns: some View
-    func textColor(_ color: Color? = nil) -> some View {
-        modifier(TextForegroundModifier(color: color))
     }
 
     @ViewBuilder fileprivate func valueChanged<T: Equatable>(value: T, onChange: @escaping (T) -> Void) -> some View {
