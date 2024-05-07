@@ -189,7 +189,11 @@ public struct AlertToast: View {
                             .renderingMode(.template)
                             .foregroundStyle(color)
                     case .loading:
-                        ActivityIndicator()
+                        ProgressView()
+                            #if os(iOS) || os(macOS) || os(visionOS)
+                            .controlSize(.large)
+                            #endif
+                            .progressViewStyle(.circular)
                     case .regular:
                         EmptyView()
                     }
@@ -247,7 +251,11 @@ public struct AlertToast: View {
                         .hudModifier()
                         .foregroundStyle(color)
                 case .loading:
-                    ActivityIndicator()
+                    ProgressView()
+                        #if os(iOS) || os(macOS) || os(visionOS)
+                        .controlSize(.large)
+                        #endif
+                        .progressViewStyle(.circular)
                 case .regular:
                     EmptyView()
                 }
@@ -317,7 +325,11 @@ public struct AlertToast: View {
                     .padding(.bottom)
                 Spacer()
             case .loading:
-                ActivityIndicator()
+                ProgressView()
+                    #if os(iOS) || os(macOS) || os(visionOS)
+                    .controlSize(.large)
+                    #endif
+                    .progressViewStyle(.circular)
             case .regular:
                 EmptyView()
             }

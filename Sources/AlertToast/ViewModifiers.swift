@@ -237,16 +237,11 @@ private struct BackgroundModifier: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        if color != nil {
+        if let color {
             content
                 .background(color)
         } else {
-            if #available(iOS 15.0, macOS 12.0, tvOS 15.0, visionOS 1.0, *) {
-                content.background(.regularMaterial)
-            } else {
-                content
-                    .background(BlurView())
-            }
+            content.background(.regularMaterial)
         }
     }
 }
@@ -300,12 +295,8 @@ public extension View {
             self.onChange(of: value) { _, newValue in
                 onChange(newValue)
             }
-        } else if #available(iOS 14.0, macOS 11.0, tvOS 14.0, *) {
-            self.onChange(of: value, perform: onChange)
         } else {
-            self.onReceive(Just(value)) { (value) in
-                onChange(value)
-            }
+            self.onChange(of: value, perform: onChange)
         }
     }
 }
