@@ -44,7 +44,7 @@ public struct AlertToast: View {
     }
 
     /// Determine what the alert will display
-    public enum AlertType: Equatable {
+    public enum AlertType: Equatable, Hashable, Sendable {
 
         /// Animated checkmark
         case complete(_ color: Color)
@@ -105,6 +105,18 @@ public struct AlertToast: View {
         }
     }
 
+    public struct AlertInfo: Hashable, Sendable {
+        let type: AlertType
+        let title: String?
+        let subtitle: String?
+
+        public init(type: AlertType, title: String?, subtitle: String?) {
+            self.type = type
+            self.title = title
+            self.subtitle = subtitle
+        }
+    }
+
     /// The display mode
     /// - `alert`
     /// - `hud`
@@ -123,6 +135,17 @@ public struct AlertToast: View {
 
     /// Customize your alert appearance
     private let style: AlertStyle
+
+    public init(
+        info: AlertInfo,
+        style: AlertStyle = .init()
+    ) {
+        self.displayMode = .alert
+        self.type = info.type
+        self.title = info.title.flatMap { LocalizedStringKey($0) }
+        self.subtitle = info.subtitle.flatMap { LocalizedStringKey($0) }
+        self.style = style
+    }
 
     /// Full init
     public init(
@@ -365,6 +388,18 @@ public struct AlertToast: View {
 
     /// Body init determine by `displayMode`
     public var body: some View {
+        switch displayMode {
+        case .alert:
+            alert
+        case .hud:
+            hud
+        case .banner:
+            banner
+        }
+    }
+
+    @ViewBuilder
+    func makeBody(_ displayMode: DisplayMode) -> some View {
         switch displayMode {
         case .alert:
             alert

@@ -72,11 +72,11 @@ public struct AlertToastModifier: ViewModifier {
             let value = alert()
 
             value
-                .overlay(
+                .overlay {
                     GeometryReader {
                         saveAlertRect($0)
                     }
-                )
+                }
                 .adaptiveOnTapGesture {
                     onTap?()
                     if tapToDismiss {
@@ -90,20 +90,7 @@ public struct AlertToastModifier: ViewModifier {
                 .onDisappear {
                     completion?()
                 }
-                .transition(
-                    {
-                        switch value.displayMode {
-                        case .alert:
-                            return AnyTransition.scale(scale: 0.8).combined(with: .opacity)
-                        case .banner(let transition):
-                            return transition == .slide
-                            ? AnyTransition.slide.combined(with: .opacity)
-                            : AnyTransition.move(edge: .bottom)
-                        case .hud:
-                            return AnyTransition.move(edge: .top).combined(with: .opacity)
-                        }
-                    }()
-                )
+                .transition(value.displayMode.transition)
         }
     }
 
@@ -112,13 +99,11 @@ public struct AlertToastModifier: ViewModifier {
         switch alert().displayMode {
         case .banner:
             content
-                .overlay(
-                    ZStack {
-                        main()
-                            .offset(y: offsetY)
-                    }
-                        .animation(Animation.spring(), value: isPresenting)
-                )
+                .overlay {
+                    main()
+                        .offset(y: offsetY)
+                        .animation(.spring, value: isPresenting)
+                }
                 .valueChanged(value: isPresenting) { presented in
                     if presented {
                         onAppearAction()
@@ -137,15 +122,13 @@ public struct AlertToastModifier: ViewModifier {
                         }
                         return AnyView(EmptyView())
                     }
-                        .overlay(
-                            ZStack {
-                                main()
-                                    .offset(y: offsetY)
-                            }
+                        .overlay {
+                            main()
+                                .offset(y: offsetY)
                                 .frame(maxWidth: size.width, maxHeight: size.height)
                                 .offset(y: offset)
                                 .animation(Animation.spring(), value: isPresenting)
-                        )
+                        }
                 )
                 .valueChanged(value: isPresenting) { presented in
                     if presented {
@@ -155,13 +138,11 @@ public struct AlertToastModifier: ViewModifier {
         case .alert:
             content
                 .overlay(
-                    ZStack {
-                        main()
-                            .offset(y: offsetY)
-                    }
+                    main()
+                        .offset(y: offsetY)
                         .frame(maxWidth: size.width, maxHeight: size.height, alignment: .center)
-                        .edgesIgnoringSafeArea(.all)
-                        .animation(Animation.spring(), value: isPresenting)
+                        .ignoresSafeArea(edges: .all)
+                        .animation(.spring, value: isPresenting)
                 )
                 .valueChanged(value: isPresenting) { presented in
                     if presented {
@@ -241,20 +222,13 @@ private struct BackgroundModifier: ViewModifier {
             content
                 .background(color)
         } else {
-            content.background(.regularMaterial)
+            content
+                .background(.regularMaterial)
         }
     }
 }
 
 public extension View {
-
-    /// Return some view w/o frame depends on the condition.
-    /// This view modifier function is set by default to:
-    /// - `maxWidth`: 175
-    /// - `maxHeight`: 175
-    func withFrame(_ withFrame: Bool) -> some View {
-        modifier(WithFrameModifier(withFrame: withFrame))
-    }
 
     /// Present `AlertToast`.
     /// - Parameters:
@@ -283,14 +257,45 @@ public extension View {
         )
     }
 
+    func toast<Item: Equatable>(
+        item: Binding<Item?>,
+        displayMode: AlertToast.DisplayMode,
+        duration: Double = 2,
+        offsetY: CGFloat = 0,
+        alert: @escaping (Item) -> AlertToast,
+        onDismiss: (() -> Void)? = nil
+    ) -> some View {
+        modifier(
+            AlertToastValueModifier(
+                item: item,
+                displayMode: displayMode,
+                duration: duration,
+                offsetY: offsetY,
+                alert: alert,
+                onDismiss: onDismiss
+            )
+        )
+    }
+
     /// Choose the alert background
     /// - Parameter color: Some Color, if `nil` return `VisualEffectBlur`
     /// - Returns: some View
     func alertBackground(_ color: Color? = nil) -> some View {
         modifier(BackgroundModifier(color: color))
     }
+}
 
-    @ViewBuilder fileprivate func valueChanged<T: Equatable>(value: T, onChange: @escaping (T) -> Void) -> some View {
+extension View {
+
+    /// Return some view w/o frame depends on the condition.
+    /// This view modifier function is set by default to:
+    /// - `maxWidth`: 175
+    /// - `maxHeight`: 175
+    func withFrame(_ withFrame: Bool) -> some View {
+        modifier(WithFrameModifier(withFrame: withFrame))
+    }
+
+    @ViewBuilder func valueChanged<T: Equatable>(value: T, onChange: @escaping (T) -> Void) -> some View {
         if #available(iOS 17.0, macOS 14.0, tvOS 17.0, visionOS 1.0, *) {
             self.onChange(of: value) { _, newValue in
                 onChange(newValue)
