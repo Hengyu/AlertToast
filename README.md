@@ -65,10 +65,20 @@ Then, use the `.toast` view modifier:
 
 **Parameters:**
 
+Method 1.
+
 - `isPresenting`: (MUST) assign a `Binding<Bool>` to show or dismiss alert.
-- `duration`: default is 2, set 0 to disable auto dismiss.
+- `duration`: default is 1.2, set 0 to disable auto dismiss.
 - `tapToDismiss`: default is `true`, set `false` to disable.
-- `alert`: (MUST) expects `AlertToast`.
+- `displayMode`: Should be either `.alert`, `.hud`, or `.banner(BannerAnimation)`.
+- `alert`: A SwiftUI View, can be `AlertToast`.
+
+Method 2.
+
+- `item`: (MUST) assign a `Binding<Item?>` to show or dismiss alert.
+- `duration`: default is 1.2, set 0 to disable auto dismiss.
+- `displayMode`: Should be either `.alert`, `.hud`, or `.banner(BannerAnimation)`.
+- `alert`: A SwiftUI View, can be `AlertToast`.
 
 #### Usage example with regular alert
 
@@ -82,21 +92,22 @@ struct ContentView: View{
 
     var body: some View{
         VStack{
-
             Button("Show Toast"){
                  showToast.toggle()
             }
         }
-        .toast(isPresenting: $showToast){
+        .toast(isPresenting: $showToast, displayMode: .alert) {
 
-            // `.alert` is the default displayMode
-            AlertToast(type: .regular, title: "Message Sent!")
+            // Set shape to `.square` to draw a square view with title
+            AlertToast(type: .regular, title: "Message Sent!", shape: .square)
             
-            //Choose .hud to toast alert from the top of the screen
-            //AlertToast(displayMode: .hud, type: .regular, title: "Message Sent!")
+            // Set shape to `.pill` to draw a pill like view with title, usually works
+            // with displayMode `.hud`.
+//          AlertToast(type: .regular, title: "Message Sent!", shape: .pill)
             
-            //Choose .banner to slide/pop alert from the bottom of the screen
-            //AlertToast(displayMode: .banner(.slide), type: .regular, title: "Message Sent!")
+            // Set shape to `.banner` to draw a banner view with title, usually works
+            // with displayMode `.banner(BannerTransition)`.
+//          AlertToast(type: .regular, title: "Message Sent!", shape: .banner)
         }
     }
 }
@@ -105,7 +116,7 @@ struct ContentView: View{
 #### Complete modifier example
 
 ```swift
-.toast(isPresenting: $showAlert, duration: 2, tapToDismiss: true, alert: {
+.toast(isPresenting: $showAlert, duration: 1.2, tapToDismiss: true, alert: {
    //AlertToast goes here
 }, onTap: {
    //onTap would call either if `tapToDismis` is true/false
@@ -119,7 +130,6 @@ struct ContentView: View{
 
 ```swift
 AlertToast(
-    displayMode: DisplayMode,
     type: AlertType,
     title: Optional(String),
     subtitle: Optional(String),
@@ -128,11 +138,12 @@ AlertToast(
            
 //This is the available customizations parameters:
 AlertStyle(
+    alertShape: AlertShape,
     titleStyle: ShapeStyle,
     titleFont: Font,
     subtitleStyle: ShapeStyle,
     subtitleFont: Font,
-    backgroundColor: Color
+    background: ShapeStyle
 )
 ```
 
@@ -147,33 +158,33 @@ AlertStyle(
 
 #### Alert dialog view modifier (with default settings):
 ```swift
-.toast(isPresenting: Binding<Bool>, duration: Double = 2, tapToDismiss: true, alert: () -> AlertToast , onTap: () -> (), completion: () -> () )
+.toast(isPresenting: Binding<Bool>, duration: Double = 1.2, tapToDismiss: true, alert: () -> AlertToast , onTap: () -> (), completion: () -> () )
 ```
 
 #### Simple Text Alert:
 ```swift
-AlertToast(type: .regular, title: Optional(String), subtitle: Optional(String))
+AlertToast(type: .regular, title: Optional(String), subtitle: Optional(String), style: AlertStyle)
 ```
 
 #### Complete/Error Alert:
 ```swift
-AlertToast(type: .complete(Color)/.error(Color), title: Optional(String), subtitle: Optional(String))
+AlertToast(type: .complete(Color)/.error(Color), title: Optional(String), subtitle: Optional(String), style: AlertStyle)
 ```
 
 #### System Image Alert:
 ```swift
-AlertToast(type: .systemImage(String, Color), title: Optional(String), subtitle: Optional(String))
+AlertToast(type: .systemImage(String, Color), title: Optional(String), subtitle: Optional(String), style: AlertStyle)
 ```
 
 #### Image Alert:
 ```swift
-AlertToast(type: .image(String), title: Optional(String), subtitle: Optional(String))
+AlertToast(type: .image(String), title: Optional(String), subtitle: Optional(String), style: AlertStyle)
 ```
 
 #### Loading Alert:
 ```swift
-//When using loading, duration won't auto dismiss and tapToDismiss is set to false
-AlertToast(type: .loading, title: Optional(String), subtitle: Optional(String))
+// When using loading, duration won't auto dismiss and tapToDismiss is set to false
+AlertToast(type: .loading, title: Optional(String), subtitle: Optional(String), style: AlertStyle)
 ```
 
 You can add many `.toast` on a single view.

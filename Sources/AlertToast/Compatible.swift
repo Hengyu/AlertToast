@@ -23,7 +23,10 @@
 import SwiftUI
 
 extension View {
-    @ViewBuilder func adaptiveOnTapGesture(fallbackToLongPress: Bool = true, _ handler: @escaping () -> Void) -> some View {
+    @ViewBuilder func adaptiveOnTapGesture(
+        fallbackToLongPress: Bool = true,
+        _ handler: @escaping () -> Void
+    ) -> some View {
         if #available(iOS 13.0, macCatalyst 13.0, macOS 10.15, tvOS 16.0, watchOS 6.0, visionOS 1.0, *) {
             onTapGesture(perform: handler)
         } else {

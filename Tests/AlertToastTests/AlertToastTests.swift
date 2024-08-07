@@ -4,9 +4,8 @@ import XCTest
 final class AlertToastTests: XCTestCase {
 
     func testInit() {
-        let toast = AlertToast(type: .regular, title: "Title", subtitle: "Subtitle")
+        let toast = AlertToast(type: .regular, title: "Title", subtitle: "Subtitle", style: .init(alertShape: .banner))
         XCTAssertEqual(toast.type, .regular)
-        XCTAssertEqual(toast.displayMode, .alert)
     }
 
     static var allTests = [

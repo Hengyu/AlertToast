@@ -23,185 +23,94 @@
 import Combine
 import SwiftUI
 
-public struct AlertToastModifier: ViewModifier {
+struct AlertToastModifier<T: View>: ViewModifier {
 
     /// Presentation `Binding<Bool>`
     @Binding var isPresenting: Bool
 
     /// Duration time to display the alert
-    @State var duration: Double = 2
+    @State var duration: TimeInterval = 2
 
     /// Tap to dismiss alert
-    @State var tapToDismiss: Bool = true
-
-    var offsetY: CGFloat = 0
-
-    /// Init `AlertToast` View
-    var alert: () -> AlertToast
+    let tapToDismiss: Bool
+    let displayMode: AlertDisplayMode
+    let toast: () -> T
 
     /// Completion block returns `true` after dismiss
-    var onTap: (() -> Void)?
-    var completion: (() -> Void)?
+    let onTap: (() -> Void)?
+    let onDismiss: (() -> Void)?
 
-    @State private var workItem: DispatchWorkItem?
+    @State private var dismissalTask: Task<(), Never>?
 
-    @State private var hostRect: CGRect = .zero
-    @State private var alertRect: CGRect = .zero
-
-    private var size: CGSize {
-        #if os(iOS) || os(tvOS)
-        return UIScreen.main.bounds.size
-        #elseif os(macOS)
-        if let frame = NSScreen.main?.frame {
-            return .init(width: frame.width, height: frame.height)
-        } else {
-            return .zero
-        }
-        #else
-        return .init(width: 200, height: 100)
-        #endif
-    }
-
-    private var offset: CGFloat {
-        -hostRect.midY + alertRect.height
-    }
-
-    @ViewBuilder
-    public func main() -> some View {
-        if isPresenting {
-            let value = alert()
-
-            value
-                .overlay(
-                    GeometryReader {
-                        saveAlertRect($0)
-                    }
-                )
-                .adaptiveOnTapGesture {
-                    onTap?()
-                    if tapToDismiss {
-                        withAnimation(.spring()) {
-                            self.workItem?.cancel()
-                            isPresenting = false
-                            self.workItem = nil
-                        }
-                    }
-                }
-                .onDisappear {
-                    completion?()
-                }
-                .transition(
-                    {
-                        switch value.displayMode {
-                        case .alert:
-                            return AnyTransition.scale(scale: 0.8).combined(with: .opacity)
-                        case .banner(let transition):
-                            return transition == .slide
-                            ? AnyTransition.slide.combined(with: .opacity)
-                            : AnyTransition.move(edge: .bottom)
-                        case .hud:
-                            return AnyTransition.move(edge: .top).combined(with: .opacity)
-                        }
-                    }()
-                )
-        }
+    init(
+        isPresenting: Binding<Bool>,
+        duration: TimeInterval = 2,
+        tapToDismiss: Bool = true,
+        displayMode: AlertDisplayMode,
+        @ViewBuilder toast: @escaping () -> T,
+        onTap: (() -> Void)?,
+        onDismiss: (() -> Void)?
+    ) {
+        _isPresenting = isPresenting
+        self.duration = duration
+        self.tapToDismiss = tapToDismiss
+        self.displayMode = displayMode
+        self.toast = toast
+        self.onTap = onTap
+        self.onDismiss = onDismiss
     }
 
     @ViewBuilder
     public func body(content: Content) -> some View {
-        switch alert().displayMode {
-        case .banner:
-            content
-                .overlay(
-                    ZStack {
-                        main()
-                            .offset(y: offsetY)
-                    }
-                        .animation(Animation.spring(), value: isPresenting)
-                )
-                .valueChanged(value: isPresenting) { presented in
-                    if presented {
-                        onAppearAction()
+        content
+            .overlay(alignment: displayMode.alignment) {
+                ZStack {
+                    if isPresenting {
+                        makeToastContent()
+                            .padding(displayMode.padding)
+                            .transition(displayMode.transition)
                     }
                 }
-        case .hud:
-            content
-                .overlay(
-                    GeometryReader { geo -> AnyView in
-                        let rect = geo.frame(in: .global)
+                // animation on the content may have unexpected behavior if
+                // the content itself has configured animation block
+                .animation(.spring, value: isPresenting)
+            }
+            .valueChanged(value: isPresenting) { isPresenting in
+                if isPresenting {
+                    scheduleDismissal()
+                } else {
+                    resetDismissal()
+                }
+            }
+    }
 
-                        if rect.integral != hostRect.integral {
-                            DispatchQueue.main.async {
-                                self.hostRect = rect
-                            }
-                        }
-                        return AnyView(EmptyView())
-                    }
-                        .overlay(
-                            ZStack {
-                                main()
-                                    .offset(y: offsetY)
-                            }
-                                .frame(maxWidth: size.width, maxHeight: size.height)
-                                .offset(y: offset)
-                                .animation(Animation.spring(), value: isPresenting)
-                        )
-                )
-                .valueChanged(value: isPresenting) { presented in
-                    if presented {
-                        onAppearAction()
-                    }
-                }
-        case .alert:
-            content
-                .overlay(
-                    ZStack {
-                        main()
-                            .offset(y: offsetY)
-                    }
-                        .frame(maxWidth: size.width, maxHeight: size.height, alignment: .center)
-                        .edgesIgnoringSafeArea(.all)
-                        .animation(Animation.spring(), value: isPresenting)
-                )
-                .valueChanged(value: isPresenting) { presented in
-                    if presented {
-                        onAppearAction()
-                    }
-                }
+    @ViewBuilder
+    private func makeToastContent() -> some View {
+        toast()
+            .adaptiveOnTapGesture {
+                dismissToast()
+            }
+            .onDisappear {
+                onDismiss?()
+            }
+    }
+
+    private func scheduleDismissal() {
+        guard duration > 0 else { return }
+        dismissalTask = Task {
+            try? await Task.sleep(nanoseconds: UInt64(duration * 1_000_000_000))
+            dismissToast()
         }
     }
 
-    private func saveAlertRect(_ geo: GeometryProxy) -> some View {
-        let rect = geo.frame(in: .global)
-        if rect.integral != alertRect.integral {
-            DispatchQueue.main.async {
-                self.alertRect = rect
-            }
-        }
-        return AnyView(EmptyView())
+    private func resetDismissal() {
+        dismissalTask?.cancel()
+        dismissalTask = nil
     }
 
-    private func onAppearAction() {
-        guard workItem == nil else {
-            return
-        }
-
-        if alert().type == .loading {
-            duration = 0
-            tapToDismiss = false
-        }
-
-        if duration > 0 {
-            workItem?.cancel()
-
-            let task = DispatchWorkItem {
-                withAnimation(Animation.spring()) {
-                    isPresenting = false
-                    workItem = nil
-                }
-            }
-            workItem = task
-            DispatchQueue.main.asyncAfter(deadline: .now() + duration, execute: task)
+    private func dismissToast() {
+        withAnimation(.spring) {
+            isPresenting = false
         }
     }
 }
@@ -230,23 +139,62 @@ private struct WithFrameModifier: ViewModifier {
     }
 }
 
-/// Fileprivate View Modifier to change the alert background.
-private struct BackgroundModifier: ViewModifier {
+public extension View {
 
-    var color: Color?
+    /// Present `AlertToast`.
+    /// - Parameters:
+    ///   - show: `Binding<Bool>`
+    ///   - alert: () -> AlertToast
+    /// - Returns: `AlertToast`
+    func toast<T>(
+        isPresenting: Binding<Bool>,
+        duration: TimeInterval = 1.2,
+        tapToDismiss: Bool = true,
+        displayMode: AlertDisplayMode,
+        @ViewBuilder toast: @escaping () -> T,
+        onTap: (() -> Void)? = nil,
+        onDismiss: (() -> Void)? = nil
+    ) -> some View where T: View {
+        modifier(
+            AlertToastModifier(
+                isPresenting: isPresenting,
+                duration: duration,
+                tapToDismiss: tapToDismiss,
+                displayMode: displayMode,
+                toast: toast,
+                onTap: onTap,
+                onDismiss: onDismiss
+            )
+        )
+    }
 
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if let color {
-            content
-                .background(color)
-        } else {
-            content.background(.regularMaterial)
-        }
+    func toast<Item: Equatable, T: View>(
+        item: Binding<Item?>,
+        duration: TimeInterval = 1.2,
+        displayMode: AlertDisplayMode,
+        @ViewBuilder toast: @escaping (Item) -> T,
+        onDismiss: (() -> Void)? = nil
+    ) -> some View {
+        modifier(
+            AlertToastValueModifier(
+                item: item,
+                duration: duration,
+                displayMode: displayMode,
+                toast: toast,
+                onDismiss: onDismiss
+            )
+        )
+    }
+
+    /// Choose the alert background
+    /// - Parameter shape: AnyShapeStyle, if `nil` return `.regularMaterial`.
+    /// - Returns: some View
+    func alertBackground(_ shape: AnyShapeStyle?) -> some View {
+        background(shape ?? AnyShapeStyle(.regularMaterial))
     }
 }
 
-public extension View {
+extension View {
 
     /// Return some view w/o frame depends on the condition.
     /// This view modifier function is set by default to:
@@ -256,41 +204,7 @@ public extension View {
         modifier(WithFrameModifier(withFrame: withFrame))
     }
 
-    /// Present `AlertToast`.
-    /// - Parameters:
-    ///   - show: `Binding<Bool>`
-    ///   - alert: () -> AlertToast
-    /// - Returns: `AlertToast`
-    func toast(
-        isPresenting: Binding<Bool>,
-        duration: Double = 2,
-        tapToDismiss: Bool = true,
-        offsetY: CGFloat = 0,
-        alert: @escaping () -> AlertToast,
-        onTap: (() -> Void)? = nil,
-        completion: (() -> Void)? = nil
-    ) -> some View {
-        modifier(
-            AlertToastModifier(
-                isPresenting: isPresenting,
-                duration: duration,
-                tapToDismiss: tapToDismiss,
-                offsetY: offsetY,
-                alert: alert,
-                onTap: onTap,
-                completion: completion
-            )
-        )
-    }
-
-    /// Choose the alert background
-    /// - Parameter color: Some Color, if `nil` return `VisualEffectBlur`
-    /// - Returns: some View
-    func alertBackground(_ color: Color? = nil) -> some View {
-        modifier(BackgroundModifier(color: color))
-    }
-
-    @ViewBuilder fileprivate func valueChanged<T: Equatable>(value: T, onChange: @escaping (T) -> Void) -> some View {
+    @ViewBuilder func valueChanged<T: Equatable>(value: T, onChange: @escaping (T) -> Void) -> some View {
         if #available(iOS 17.0, macOS 14.0, tvOS 17.0, visionOS 1.0, *) {
             self.onChange(of: value) { _, newValue in
                 onChange(newValue)
